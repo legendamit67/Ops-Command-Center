@@ -1,0 +1,6 @@
+{
+  "name": "FIFA World Cup 2026 Stadium Operations & Fan Hub",
+  "description": "A Generative AI-powered hub for stadium operations, real-time crowd safety management, multilingual fan assistance, and sustainability tracking during the 2026 FIFA World Cup.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
