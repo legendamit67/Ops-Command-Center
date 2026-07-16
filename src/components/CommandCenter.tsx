@@ -14,6 +14,16 @@ interface CommandCenterProps {
 }
 
 export default function CommandCenter({ sectors, onTriggerDensitySimulation }: CommandCenterProps) {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    // Auto-clear after 4s
+    const timer = setTimeout(() => {
+      setToastMessage((curr) => curr === msg ? null : curr);
+    }, 4000);
+  };
+
   // Toggle between Tactical Incidents, AI Predictive Sensors, and Live Operations Control Center
   const [consoleView, setConsoleView] = useState<"tactical" | "predictive" | "operations">("tactical");
 
@@ -123,7 +133,7 @@ export default function CommandCenter({ sectors, onTriggerDensitySimulation }: C
       setIncidentResult(data);
     } catch (err) {
       console.error(err);
-      alert("Failed to analyze incident with GenAI. Using fail-safe fallback plan.");
+      triggerToast("Failed to analyze incident with GenAI. Using fail-safe fallback plan.");
     } finally {
       setIsProcessing(false);
     }
@@ -257,7 +267,7 @@ export default function CommandCenter({ sectors, onTriggerDensitySimulation }: C
                   </div>
                   <button 
                     type="button"
-                    onClick={() => alert("Re-syncing timecode clocks... Done.")}
+                    onClick={() => triggerToast("Re-syncing timecode clocks... Done.")}
                     className="bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-[9px] font-black uppercase tracking-wider px-3 py-1.5 border border-white/10 rounded-none transition"
                   >
                     🔄 FORCE TIMECODE RESYNC
@@ -926,6 +936,21 @@ export default function CommandCenter({ sectors, onTriggerDensitySimulation }: C
 
             </div>
 
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Non-blocking toast message display */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 bg-zinc-900 border-2 border-yellow-500 text-white font-mono text-xs p-4 shadow-2xl uppercase tracking-wider flex items-center space-x-3 rounded-none"
+          >
+            <span className="text-yellow-500 font-bold">⚠️ SYSTEM_UPDATE:</span>
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>

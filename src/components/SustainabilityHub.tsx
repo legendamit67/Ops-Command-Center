@@ -8,6 +8,16 @@ interface SustainabilityHubProps {
 }
 
 export default function SustainabilityHub({ initialData }: SustainabilityHubProps) {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    // Auto-clear after 4s
+    const timer = setTimeout(() => {
+      setToastMessage((curr) => curr === msg ? null : curr);
+    }, 4000);
+  };
+
   // Local form sliders state
   const [energy, setEnergy] = useState<number>(initialData.energyUsageKWh);
   const [water, setWater] = useState<number>(initialData.waterRecycledLiters);
@@ -49,7 +59,7 @@ export default function SustainabilityHub({ initialData }: SustainabilityHubProp
       setSustainabilityResult(data);
     } catch (err) {
       console.error(err);
-      alert("Failed to analyze sustainability profile. Using offline environmental model.");
+      triggerToast("Failed to analyze sustainability profile. Using offline environmental model.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -275,6 +285,21 @@ export default function SustainabilityHub({ initialData }: SustainabilityHubProp
         </AnimatePresence>
 
       </div>
+
+      {/* Non-blocking toast message display */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 bg-zinc-900 border-2 border-yellow-500 text-white font-mono text-xs p-4 shadow-2xl uppercase tracking-wider flex items-center space-x-3 rounded-none"
+          >
+            <span className="text-yellow-500 font-bold">⚠️ SYSTEM_UPDATE:</span>
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

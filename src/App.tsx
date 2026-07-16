@@ -39,12 +39,16 @@ export default function App() {
   const [isStaffAuthenticated, setIsStaffAuthenticated] = useState(false);
 
   // Fetch matchday data from the full-stack server backend
-  const fetchStadiumData = async () => {
-    setIsLoading(true);
+  const fetchStadiumData = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
     try {
       const res = await fetch("/api/stadium/data");
       if (!res.ok) {
         throw new Error("Failed to sync matchday data feed.");
+      }
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Received non-JSON response from telemetry feed.");
       }
       const data = await res.json();
       setStadiumName(data.stadiumName);
@@ -57,7 +61,7 @@ export default function App() {
       setError(err.message || "An unexpected error occurred while fetching stadium telemetry.");
       
       // Fallback offline state to ensure absolute robustness during preview
-      setSectors([
+      setSectors((prev) => prev.length > 0 ? prev : [
         { name: "North Gate A", currentWaitMinutes: 8, status: "Normal", flowRate: "120 fans/min", currentLoadPercentage: 35 },
         { name: "East Gate B", currentWaitMinutes: 24, status: "Heavy", flowRate: "280 fans/min", currentLoadPercentage: 78 },
         { name: "South Gate C (Main Transit)", currentWaitMinutes: 38, status: "Critical", flowRate: "410 fans/min", currentLoadPercentage: 92 },
@@ -65,12 +69,12 @@ export default function App() {
         { name: "Lower Concourse North", currentWaitMinutes: 5, status: "Normal", flowRate: "Moderate congestion", currentLoadPercentage: 40 },
         { name: "Upper Concourse East", currentWaitMinutes: 15, status: "Moderate", flowRate: "Heavy concession queues", currentLoadPercentage: 65 }
       ]);
-      setTransit([
+      setTransit((prev) => prev.length > 0 ? prev : [
         { name: "Metro Line 2 (Stadium Central)", type: "Train", frequencyMinutes: 3, waitMinutes: 15, status: "Crowded", alert: "High volume, shuttle trains running extra services." },
         { name: "North Parking Shuttle (Route 10)", type: "Shuttle Bus", frequencyMinutes: 5, waitMinutes: 8, status: "Normal" },
         { name: "South Express Transit (Route 20)", type: "Shuttle Bus", frequencyMinutes: 6, waitMinutes: 22, status: "Delayed", alert: "Traffic congestion on Highway 95." }
       ]);
-      setSustainability({
+      setSustainability((prev) => prev ? prev : {
         energyUsageKWh: 14200,
         energySource: "Solar & Grid Hybrid",
         waterRecycledLiters: 128400,
@@ -78,7 +82,7 @@ export default function App() {
         carbonOffsetTons: 42.8
       });
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
     }
   };
 
@@ -86,10 +90,15 @@ export default function App() {
     try {
       const res = await fetch("/api/stadium/match-score");
       if (res.ok) {
-        const scoreData: LiveScore = await res.json();
-        setLiveScore(scoreData);
-        if (scoreData.recentEvents) {
-          setLastEventCount(scoreData.recentEvents.length);
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const scoreData: LiveScore = await res.json();
+          setLiveScore(scoreData);
+          if (scoreData.recentEvents) {
+            setLastEventCount(scoreData.recentEvents.length);
+          }
+        } else {
+          console.warn("Live score API returned non-JSON content. Likely server starting up or fallback page.");
         }
       }
     } catch (err) {
@@ -132,7 +141,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchStadiumData();
+    fetchStadiumData(false);
     fetchLiveScore(true);
 
     // Dynamic match score polling
@@ -140,8 +149,14 @@ export default function App() {
       fetchLiveScore(false);
     }, 10000);
 
+    // Dynamic stadium data polling
+    const dataInterval = setInterval(() => {
+      fetchStadiumData(true);
+    }, 15000);
+
     return () => {
       clearInterval(scoreInterval);
+      clearInterval(dataInterval);
     };
   }, []);
 
