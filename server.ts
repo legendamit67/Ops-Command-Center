@@ -38,7 +38,7 @@ async function generateContentWithFallback(params: {
   config?: any;
 }) {
   const client = getGeminiClient();
-  const models = ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.5-flash"];
+  const models = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
   let lastError: any = null;
 
   for (const model of models) {
@@ -206,8 +206,9 @@ app.get("/api/stadium/data", (req, res) => {
 
 // 3. GenAI Chat Endpoint (multilingual stadium/fan support)
 app.post("/api/gemini/chat", async (req, res) => {
-  const { history, message, userType } = req.body;
-  const userRole = userType || "fan";
+  const message = String(req.body.message || "").trim();
+  const userRole = String(req.body.userType || "fan").trim();
+  const history = Array.isArray(req.body.history) ? req.body.history : [];
   try {
     // Construct system instructions based on whether the user is a Fan or Venue Staff
     const systemInstruction = userRole === "staff"
@@ -255,7 +256,10 @@ app.post("/api/gemini/chat", async (req, res) => {
 
 // 4. GenAI Incident Operational Intelligence Endpoint
 app.post("/api/gemini/incident", async (req, res) => {
-  const { type, location, severity, description } = req.body;
+  const type = String(req.body.type || "").trim();
+  const location = String(req.body.location || "").trim();
+  const severity = String(req.body.severity || "").trim();
+  const description = String(req.body.description || "").trim();
   try {
     if (!type || !location || !severity) {
       return res.status(400).json({ error: "Missing required incident fields (type, location, severity)" });
@@ -333,7 +337,10 @@ app.post("/api/gemini/incident", async (req, res) => {
 
 // 5. GenAI Sustainability Analysis Endpoint
 app.post("/api/gemini/sustainability", async (req, res) => {
-  const { energyUsageKWh, waterRecycledLiters, wasteDivertedPercentage, carbonOffsetTons } = req.body;
+  const energyUsageKWh = Number(req.body.energyUsageKWh) || 0;
+  const waterRecycledLiters = Number(req.body.waterRecycledLiters) || 0;
+  const wasteDivertedPercentage = Number(req.body.wasteDivertedPercentage) || 0;
+  const carbonOffsetTons = Number(req.body.carbonOffsetTons) || 0;
   try {
     const prompt = `Analyze this live Stadium Sustainability Snapshot for Estadio Azteca during a major 2026 World Cup Matchday:
       - Energy Consumption: ${energyUsageKWh} kWh (Source: Solar & Grid Hybrid)
@@ -486,7 +493,9 @@ app.get("/api/stadium/match-score", (req, res) => {
 
 // 7. GenAI Emergency SOS Endpoint
 app.post("/api/gemini/sos", async (req, res) => {
-  const { emergencyType, location, urgency } = req.body;
+  const emergencyType = String(req.body.emergencyType || "").trim();
+  const location = String(req.body.location || "").trim();
+  const urgency = String(req.body.urgency || "").trim();
   const loc = location || "Section 104";
   const type = emergencyType || "General Assistance";
   try {

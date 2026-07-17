@@ -93,6 +93,18 @@ export default function FanHub({ sectors, transit, onRefreshData, isLoadingData 
   // Selected language for multilingual AI conversations (100+ languages)
   const [selectedLang, setSelectedLang] = useState<string>("English");
 
+  // Memoized filtered players for optimized renders (Factor 3: Efficiency)
+  const filteredPlayers = React.useMemo(() => {
+    return players.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(squadSearch.toLowerCase()) || p.number.toString() === squadSearch;
+      const matchesTeam = squadTeamFilter === "All" || p.team === squadTeamFilter;
+      const matchesStatus = squadStatusFilter === "All" || 
+        (squadStatusFilter === "Playing" && p.isPlayingNow) || 
+        (squadStatusFilter === "Bench" && !p.isPlayingNow);
+      return matchesSearch && matchesTeam && matchesStatus;
+    });
+  }, [players, squadSearch, squadTeamFilter, squadStatusFilter]);
+
   // Legacy state placeholders for compiler safety
   const isChatOpen = false;
   const setIsChatOpen = (val: boolean) => {};
@@ -740,16 +752,7 @@ export default function FanHub({ sectors, transit, onRefreshData, isLoadingData 
 
               {/* Players List Grid */}
               <div className="p-6 sm:p-8 space-y-4 max-h-[500px] overflow-y-auto scrollbar-thin">
-                {players
-                  .filter(p => {
-                    const matchesSearch = p.name.toLowerCase().includes(squadSearch.toLowerCase()) || p.number.toString() === squadSearch;
-                    const matchesTeam = squadTeamFilter === "All" || p.team === squadTeamFilter;
-                    const matchesStatus = squadStatusFilter === "All" || 
-                      (squadStatusFilter === "Playing" && p.isPlayingNow) || 
-                      (squadStatusFilter === "Bench" && !p.isPlayingNow);
-                    return matchesSearch && matchesTeam && matchesStatus;
-                  })
-                  .map((player) => (
+                {filteredPlayers.map((player) => (
                     <div 
                       key={player.id}
                       className="bg-zinc-950 hover:bg-zinc-900 border border-white/10 p-4 rounded-none flex items-center justify-between gap-4 transition"

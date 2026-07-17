@@ -214,7 +214,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 bg-black">
+      <main className={`flex-1 transition-colors duration-300 ${theme === "dark" ? "bg-black" : "bg-zinc-50"}`}>
         {isLoading && sectors.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-96 space-y-4">
             <div className="animate-spin rounded-none h-10 w-10 border-2 border-white border-t-transparent" />
